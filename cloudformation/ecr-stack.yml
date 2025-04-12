@@ -1,0 +1,66 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "ECR Stack: Creates ECR Repository and stores URI in Parameter Store - Mumbai Region (ap-south-1) - Dev Env"
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: Mane
+    Description: Name of the project
+  Environment:
+    Type: String
+    Default: Dev
+    Description: Environment (e.g., Dev, Prod)
+  Owner:
+    Type: String
+    Default: Sachin
+    Description: Owner of the resources
+  Region:
+    Type: String
+    Description: "AWS Region where the resources will be deployed"
+    Default: ap-south-1
+    AllowedValues:
+      - ap-south-1
+      - us-east-1
+      - us-west-1
+      - eu-west-1
+    ConstraintDescription: "Please select a valid AWS region"
+
+Resources:
+  FlaskAppECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub "${ProjectName}-flask-app"
+      ImageScanningConfiguration:
+        scanOnPush: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-${Environment}-FlaskAppECR"
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Owner
+          Value: !Ref Owner
+
+  RepositoryURIParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${ProjectName}/ecr/repository-uri"
+      Type: String
+      Value: !Sub "${FlaskAppECRRepository.RepositoryUri}"
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-${Environment}-ECR-URI"
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Owner
+          Value: !Ref Owner
+
+Outputs:
+  ECRRepositoryUri:
+    Description: URI of the created ECR repository
+    Value: !GetAtt FlaskAppECRRepository.RepositoryUri
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-ECRRepoUri"
