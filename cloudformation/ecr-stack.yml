@@ -1,66 +1,75 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "ECR Stack: Creates ECR Repository and stores URI in Parameter Store - Mumbai Region (ap-south-1) - Dev Env"
+Description: "ecr stack: creates ecr repo and stores uri in parameter store"
 
 Parameters:
-  ProjectName:
+  project:
     Type: String
-    Default: Mane
-    Description: Name of the project
-  Environment:
+    Default: mane
+    Description: project name (e.g., mane, myapp)
+
+  environment:
     Type: String
-    Default: Dev
-    Description: Environment (e.g., Dev, Prod)
-  Owner:
+    Default: dev
+    Description: deployment environment (e.g., dev, prod)
+
+  owner:
     Type: String
-    Default: Sachin
-    Description: Owner of the resources
-  Region:
+    Default: sachin
+    Description: resource owner
+
+  region:
     Type: String
-    Description: "AWS Region where the resources will be deployed"
     Default: ap-south-1
     AllowedValues:
       - ap-south-1
       - us-east-1
       - us-west-1
       - eu-west-1
-    ConstraintDescription: "Please select a valid AWS region"
+    ConstraintDescription: select a valid aws region
 
 Resources:
-  FlaskAppECRRepository:
+
+  ECRRepository:
     Type: AWS::ECR::Repository
     Properties:
-      RepositoryName: !Sub "${ProjectName}-flask-app"
+      RepositoryName: !Sub "${project}-${environment}-ecr-repo"
       ImageScanningConfiguration:
         scanOnPush: true
+      EncryptionConfiguration:
+        EncryptionType: AES256
       Tags:
         - Key: Name
-          Value: !Sub "${ProjectName}-${Environment}-FlaskAppECR"
-        - Key: Project
-          Value: !Ref ProjectName
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Owner
-          Value: !Ref Owner
+          Value: !Sub "${project}-${environment}-ecr-repo"
+        - Key: project
+          Value: !Ref project
+        - Key: environment
+          Value: !Ref environment
+        - Key: owner
+          Value: !Ref owner
 
-  RepositoryURIParameter:
+  ECRRepositoryUriSSM:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub "/${ProjectName}/ecr/repository-uri"
+      Name: !Sub "/${project}/${environment}/ecr/repository-uri"
       Type: String
-      Value: !Sub "${FlaskAppECRRepository.RepositoryUri}"
-      Tags:
-        - Key: Name
-          Value: !Sub "${ProjectName}-${Environment}-ECR-URI"
-        - Key: Project
-          Value: !Ref ProjectName
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Owner
-          Value: !Ref Owner
+      Value: !GetAtt ECRRepository.RepositoryUri
+      Description: !Sub "ecr repo uri for ${project} in ${environment}"
 
 Outputs:
-  ECRRepositoryUri:
-    Description: URI of the created ECR repository
-    Value: !GetAtt FlaskAppECRRepository.RepositoryUri
+  ecrRepositoryName:
+    Description: name of the created ecr repository
+    Value: !Ref ECRRepository
     Export:
-      Name: !Sub "${ProjectName}-${Environment}-ECRRepoUri"
+      Name: !Sub "${project}-${environment}-ecr-repo-name"
+
+  ecrRepositoryUri:
+    Description: uri of the created ecr repository
+    Value: !GetAtt ECRRepository.RepositoryUri
+    Export:
+      Name: !Sub "${project}-${environment}-ecr-repo-uri"
+
+  ecrRepositoryUriSSMParam:
+    Description: ssm parameter name storing the ecr uri
+    Value: !Ref ECRRepositoryUriSSM
+    Export:
+      Name: !Sub "${project}-${environment}-ecr-repo-uri-ssm"

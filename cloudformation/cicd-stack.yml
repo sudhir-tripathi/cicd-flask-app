@@ -1,41 +1,41 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: "Pipeline Stack: Creates CodePipeline, CodeBuild, S3 Artifact Bucket, IAM Roles - Mumbai Region (ap-south-1)"
+Description: "pipeline stack: creates codepipeline, codebuild, s3 artifact bucket, iam roles - mumbai region (ap-south-1)"
 
 Parameters:
-  Project:
+  project:
     Type: String
-    Default: Mane
-    Description: The name of the project (e.g., Mane)
-  Environment:
+    Default: mane
+    Description: The name of the project (e.g., mane)
+  environment:
     Type: String
-    Default: Dev
-    Description: The environment where resources will be deployed (e.g., Dev, Prod)
-  Owner:
+    Default: dev
+    Description: The environment where resources will be deployed (e.g., dev, prod)
+  owner:
     Type: String
-    Default: Sachin
+    Default: sachin
     Description: The owner of the project
-  GitHubOwner:
+  githubowner:
     Type: String
     Description: GitHub username or organization name
-  GitHubRepo:
+  githubrepo:
     Type: String
     Description: GitHub repository name
-  GitHubBranch:
+  githubbranch:
     Type: String
     Default: main
     Description: GitHub branch to trigger the pipeline from
-  GitHubOAuthToken:
+  githuboauthtoken:
     Type: String
     NoEcho: true
     Description: (Required) GitHub personal access token (repo or public_repo scope needed)
-    # IMPORTANT: Store this securely (e.g., Secrets Manager) in production.
+    # IMPORTANT: Store this securely (e.g., secrets manager) in production.
 
 Resources:
-  PipelineArtifactsBucket:
+  pipelineartifactsbucket:
     Type: AWS::S3::Bucket
     DeletionPolicy: Retain
     Properties:
-      BucketName: !Sub "${Project}-${Environment}-pipeline-artifacts-${AWS::AccountId}-${AWS::Region}"
+      BucketName: !Sub "${project}-${environment}-pipeline-artifacts-${AWS::AccountId}-${AWS::Region}"
       VersioningConfiguration:
         Status: Enabled
       PublicAccessBlockConfiguration:
@@ -50,17 +50,17 @@ Resources:
             ExpirationInDays: 90
             NoncurrentVersionExpirationInDays: 30
       Tags:
-        - Key: Project
-          Value: !Ref Project
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Owner
-          Value: !Ref Owner
+        - Key: project
+          Value: !Ref project
+        - Key: environment
+          Value: !Ref environment
+        - Key: owner
+          Value: !Ref owner
 
-  CodeBuildRole:
+  codebuildrole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub "${Project}-${Environment}-CodeBuildRole"
+      RoleName: !Sub "${project}-${environment}-codebuildrole"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -79,14 +79,14 @@ Resources:
                   - s3:GetObjectVersion
                   - s3:PutObject
                 Resource:
-                  - !GetAtt PipelineArtifactsBucket.Arn
-                  - !Sub "${PipelineArtifactsBucket.Arn}/*"
+                  - !GetAtt pipelineartifactsbucket.Arn
+                  - !Sub "${pipelineartifactsbucket.Arn}/*"
               - Effect: Allow
                 Action:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
-                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${Project}-${Environment}-CodeBuildProject:*"
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${project}-${environment}-codebuildproject:*"
               - Effect: Allow
                 Action:
                   - ecr:GetAuthorizationToken
@@ -98,18 +98,18 @@ Resources:
                   - ecr:GetDownloadUrlForLayer
                 Resource: "*"
       Tags:
-        - Key: Project
-          Value: !Ref Project
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Owner
-          Value: !Ref Owner
+        - Key: project
+          Value: !Ref project
+        - Key: environment
+          Value: !Ref environment
+        - Key: owner
+          Value: !Ref owner
 
-  CodeBuildProject:
+  codebuildproject:
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: !Sub "${Project}-${Environment}-BuildProject"
-      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Name: !Sub "${project}-${environment}-buildproject"
+      ServiceRole: !GetAtt codebuildrole.Arn
       Source:
         Type: CODEPIPELINE
         BuildSpec: buildspec.yml
@@ -125,7 +125,7 @@ Resources:
             Value: !Ref AWS::Region
           - Name: ECR_REPOSITORY_NAME
             Value: !ImportValue
-              Fn::Sub: "${Project}-${Environment}-ECRRepositoryName"
+              Fn::Sub: "${project}-${environment}-ecrrepositoryname"
           - Name: CONTAINER_NAME
             Value: flask-container
       Artifacts:
@@ -134,17 +134,17 @@ Resources:
         CloudWatchLogs:
           Status: ENABLED
       Tags:
-        - Key: Project
-          Value: !Ref Project
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Owner
-          Value: !Ref Owner
+        - Key: project
+          Value: !Ref project
+        - Key: environment
+          Value: !Ref environment
+        - Key: owner
+          Value: !Ref owner
 
-  PipelineRole:
+  piperoler:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub "${Project}-${Environment}-PipelineRole"
+      RoleName: !Sub "${project}-${environment}-piperoler"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -163,13 +163,13 @@ Resources:
                   - s3:GetObjectVersion
                   - s3:PutObject
                 Resource:
-                  - !GetAtt PipelineArtifactsBucket.Arn
-                  - !Sub "${PipelineArtifactsBucket.Arn}/*"
+                  - !GetAtt pipelineartifactsbucket.Arn
+                  - !Sub "${pipelineartifactsbucket.Arn}/*"
               - Effect: Allow
                 Action:
                   - codebuild:BatchGetBuilds
                   - codebuild:StartBuild
-                Resource: !GetAtt CodeBuildProject.Arn
+                Resource: !GetAtt codebuildproject.Arn
               - Effect: Allow
                 Action:
                   - ecs:DescribeServices
@@ -177,33 +177,33 @@ Resources:
                 Resource: !Sub
                   - "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:service/${ClusterName}/${ServiceName}"
                   - ClusterName: !ImportValue
-                      Fn::Sub: "${Project}-${Environment}-ClusterName"
+                      Fn::Sub: "${project}-${environment}-clustername"
                     ServiceName: !ImportValue
-                      Fn::Sub: "${Project}-${Environment}-ECSServiceName"
+                      Fn::Sub: "${project}-${environment}-ecsservicename"
               - Effect: Allow
                 Action:
                   - iam:PassRole
                 Resource: "*"
       Tags:
-        - Key: Project
-          Value: !Ref Project
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Owner
-          Value: !Ref Owner
+        - Key: project
+          Value: !Ref project
+        - Key: environment
+          Value: !Ref environment
+        - Key: owner
+          Value: !Ref owner
 
-  CodePipeline:
+  codepipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
-      Name: !Sub "${Project}-${Environment}-Pipeline"
-      RoleArn: !GetAtt PipelineRole.Arn
+      Name: !Sub "${project}-${environment}-pipeline"
+      RoleArn: !GetAtt piperoler.Arn
       ArtifactStore:
         Type: S3
-        Location: !Ref PipelineArtifactsBucket
+        Location: !Ref pipelineartifactsbucket
       Stages:
         - Name: Source
           Actions:
-            - Name: GitHubSource
+            - Name: GithubSource
               ActionTypeId:
                 Category: Source
                 Owner: ThirdParty
@@ -212,10 +212,10 @@ Resources:
               OutputArtifacts:
                 - Name: SourceOutput
               Configuration:
-                Owner: !Ref GitHubOwner
-                Repo: !Ref GitHubRepo
-                Branch: !Ref GitHubBranch
-                OAuthToken: !Ref GitHubOAuthToken
+                Owner: !Ref githubowner
+                Repo: !Ref githubrepo
+                Branch: !Ref githubbranch
+                OAuthToken: !Ref githuboauthtoken
                 PollForSourceChanges: true
               RunOrder: 1
         - Name: Build
@@ -231,7 +231,7 @@ Resources:
               OutputArtifacts:
                 - Name: BuildOutput
               Configuration:
-                ProjectName: !Ref CodeBuildProject
+                ProjectName: !Ref codebuildproject
               RunOrder: 1
         - Name: Deploy
           Actions:
@@ -245,29 +245,28 @@ Resources:
                 - Name: BuildOutput
               Configuration:
                 ClusterName: !ImportValue
-                  Fn::Sub: "${Project}-${Environment}-ClusterName"
+                  Fn::Sub: "${project}-${environment}-clustername"
                 ServiceName: !ImportValue
-                  Fn::Sub: "${Project}-${Environment}-ECSServiceName"
+                  Fn::Sub: "${project}-${environment}-ecsservicename"
                 FileName: imagedefinitions.json
               RunOrder: 1
       Tags:
-        - Key: Project
-          Value: !Ref Project
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Owner
-          Value: !Ref Owner
+        - Key: project
+          Value: !Ref project
+        - Key: environment
+          Value: !Ref environment
+        - Key: owner
+          Value: !Ref owner
 
 Outputs:
-  PipelineName:
+  Pipelinename:
     Description: Name of the CodePipeline
-    Value: !Ref CodePipeline
+    Value: !Ref codepipeline
     Export:
-      Name: !Sub "${Project}-${Environment}-PipelineName"
+      Name: !Sub "${project}-${environment}-pipelinename"
 
-  PipelineArtifactBucketName:
-    Description: Name of the S3 bucket for pipeline artifacts
-    Value: !Ref PipelineArtifactsBucket
+  Pipelineartifactbucketname:
+    Description: Name of the s3 bucket for pipeline artifacts
+    Value: !Ref pipelineartifactsbucket
     Export:
-      Name: !Sub "${Project}-${Environment}-PipelineArtifactBucketName"
- 
+      Name: !Sub "${project}-${environment}-pipelineartifactbucketname"

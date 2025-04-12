@@ -1,83 +1,103 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "VPC Stack: Creates VPC, Subnets, IGW, NAT GW, Route Tables - Flexible for multiple regions and projects"
+Description: "vpc stack: creates vpc, subnets, igw, nat gw, route tables"
 
 Parameters:
-  VpcCIDR:
+  vpcCIDR:
     Type: String
     Default: 10.0.0.0/16
-  PublicSubnet1CIDR:
+  publicSubnet1CIDR:
     Type: String
     Default: 10.0.1.0/24
-  PublicSubnet2CIDR:
+  publicSubnet2CIDR:
     Type: String
     Default: 10.0.2.0/24
-  PrivateSubnet1CIDR:
+  privateSubnet1CIDR:
     Type: String
     Default: 10.0.3.0/24
-  PrivateSubnet2CIDR:
+  privateSubnet2CIDR:
     Type: String
     Default: 10.0.4.0/24
 
-  Project:
+  project:
     Type: String
-    Default: Mane
-  Environment:
+    Default: mane
+  environment:
     Type: String
-    Default: Dev
-  Owner:
+    Default: dev
+  owner:
     Type: String
-    Default: Sachin
+    Default: sachin
 
-  Region:
+  region:
     Type: String
-    Description: "AWS Region where the resources will be deployed"
     Default: ap-south-1
     AllowedValues:
       - ap-south-1
       - us-east-1
       - us-west-1
       - eu-west-1
-    ConstraintDescription: "Please select a valid AWS region"
 
-  AvailabilityZone1:
+  availabilityZone1:
     Type: String
-    Description: "First Availability Zone"
-    Default: "ap-south-1a" # Static string default
+    Default: ap-south-1a
+  availabilityZone2:
+    Type: String
+    Default: ap-south-1b
 
-  AvailabilityZone2:
-    Type: String
-    Description: "Second Availability Zone"
-    Default: "ap-south-1b" # Static string default
+Mappings: {}
+Conditions: {}
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "Networking Configuration"
+        Parameters:
+          - vpcCIDR
+          - publicSubnet1CIDR
+          - publicSubnet2CIDR
+          - privateSubnet1CIDR
+          - privateSubnet2CIDR
+      - Label:
+          default: "Deployment Settings"
+        Parameters:
+          - project
+          - environment
+          - owner
+          - region
+          - availabilityZone1
+          - availabilityZone2
 
 Resources:
+
   VPC:
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock: !Ref VpcCIDR
+      CidrBlock: !Ref vpcCIDR
       EnableDnsSupport: true
       EnableDnsHostnames: true
       Tags:
         - Key: Name
-          Value: !Sub "${Project}-${Environment}-VPC"
-        - Key: Project
-          Value: !Ref Project
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Owner
-          Value: !Ref Owner
+          Value: !Sub "${project}-vpc"
+        - Key: project
+          Value: !Ref project
+        - Key: environment
+          Value: !Ref environment
+        - Key: owner
+          Value: !Ref owner
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
         - Key: Name
-          Value: !Sub "${Project}-${Environment}-IGW"
-        - Key: Project
-          Value: !Ref Project
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Owner
-          Value: !Ref Owner
+          Value: !Sub "${project}-igw"
+        - Key: project
+          Value: !Ref project
+        - Key: environment
+          Value: !Ref environment
+        - Key: owner
+          Value: !Ref owner
 
   AttachGateway:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -89,69 +109,69 @@ Resources:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      CidrBlock: !Ref PublicSubnet1CIDR
-      AvailabilityZone: !Ref AvailabilityZone1  # Dynamically specified AZ
+      CidrBlock: !Ref publicSubnet1CIDR
+      AvailabilityZone: !Ref availabilityZone1
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub "${Project}-${Environment}-PublicSubnet1"
-        - Key: Project
-          Value: !Ref Project
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Owner
-          Value: !Ref Owner
+          Value: !Sub "${project}-public-subnet1"
+        - Key: project
+          Value: !Ref project
+        - Key: environment
+          Value: !Ref environment
+        - Key: owner
+          Value: !Ref owner
 
   PublicSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      CidrBlock: !Ref PublicSubnet2CIDR
-      AvailabilityZone: !Ref AvailabilityZone2  # Dynamically specified AZ
+      CidrBlock: !Ref publicSubnet2CIDR
+      AvailabilityZone: !Ref availabilityZone2
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub "${Project}-${Environment}-PublicSubnet2"
-        - Key: Project
-          Value: !Ref Project
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Owner
-          Value: !Ref Owner
+          Value: !Sub "${project}-public-subnet2"
+        - Key: project
+          Value: !Ref project
+        - Key: environment
+          Value: !Ref environment
+        - Key: owner
+          Value: !Ref owner
 
   PrivateSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      CidrBlock: !Ref PrivateSubnet1CIDR
-      AvailabilityZone: !Ref AvailabilityZone1  # Dynamically specified AZ
+      CidrBlock: !Ref privateSubnet1CIDR
+      AvailabilityZone: !Ref availabilityZone1
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub "${Project}-${Environment}-PrivateSubnet1"
-        - Key: Project
-          Value: !Ref Project
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Owner
-          Value: !Ref Owner
+          Value: !Sub "${project}-private-subnet1"
+        - Key: project
+          Value: !Ref project
+        - Key: environment
+          Value: !Ref environment
+        - Key: owner
+          Value: !Ref owner
 
   PrivateSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      CidrBlock: !Ref PrivateSubnet2CIDR
-      AvailabilityZone: !Ref AvailabilityZone2  # Dynamically specified AZ
+      CidrBlock: !Ref privateSubnet2CIDR
+      AvailabilityZone: !Ref availabilityZone2
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub "${Project}-${Environment}-PrivateSubnet2"
-        - Key: Project
-          Value: !Ref Project
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Owner
-          Value: !Ref Owner
+          Value: !Sub "${project}-private-subnet2"
+        - Key: project
+          Value: !Ref project
+        - Key: environment
+          Value: !Ref environment
+        - Key: owner
+          Value: !Ref owner
 
   NatGatewayEIP:
     Type: AWS::EC2::EIP
@@ -160,13 +180,13 @@ Resources:
       Domain: vpc
       Tags:
         - Key: Name
-          Value: !Sub "${Project}-${Environment}-NAT-EIP"
-        - Key: Project
-          Value: !Ref Project
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Owner
-          Value: !Ref Owner
+          Value: !Sub "${project}-nat-eip"
+        - Key: project
+          Value: !Ref project
+        - Key: environment
+          Value: !Ref environment
+        - Key: owner
+          Value: !Ref owner
 
   NatGateway:
     Type: AWS::EC2::NatGateway
@@ -175,13 +195,13 @@ Resources:
       SubnetId: !Ref PublicSubnet1
       Tags:
         - Key: Name
-          Value: !Sub "${Project}-${Environment}-NATGateway"
-        - Key: Project
-          Value: !Ref Project
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Owner
-          Value: !Ref Owner
+          Value: !Sub "${project}-nat-gw"
+        - Key: project
+          Value: !Ref project
+        - Key: environment
+          Value: !Ref environment
+        - Key: owner
+          Value: !Ref owner
 
   RouteTablePublic:
     Type: AWS::EC2::RouteTable
@@ -189,13 +209,13 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub "${Project}-${Environment}-PublicRouteTable"
-        - Key: Project
-          Value: !Ref Project
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Owner
-          Value: !Ref Owner
+          Value: !Sub "${project}-public-rt"
+        - Key: project
+          Value: !Ref project
+        - Key: environment
+          Value: !Ref environment
+        - Key: owner
+          Value: !Ref owner
 
   RoutePublic:
     Type: AWS::EC2::Route
@@ -223,13 +243,13 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub "${Project}-${Environment}-PrivateRouteTable"
-        - Key: Project
-          Value: !Ref Project
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Owner
-          Value: !Ref Owner
+          Value: !Sub "${project}-private-rt"
+        - Key: project
+          Value: !Ref project
+        - Key: environment
+          Value: !Ref environment
+        - Key: owner
+          Value: !Ref owner
 
   RoutePrivate:
     Type: AWS::EC2::Route
@@ -251,27 +271,27 @@ Resources:
       SubnetId: !Ref PrivateSubnet2
 
 Outputs:
-  VPCId:
+  vpcId:
     Value: !Ref VPC
     Export:
-      Name: !Sub "${Project}-${Environment}-VPCId"
+      Name: !Sub "${project}-${environment}-vpc-id"
 
-  PublicSubnet1Id:
+  publicSubnet1Id:
     Value: !Ref PublicSubnet1
     Export:
-      Name: !Sub "${Project}-${Environment}-PublicSubnet1Id"
+      Name: !Sub "${project}-${environment}-public-subnet1-id"
 
-  PublicSubnet2Id:
+  publicSubnet2Id:
     Value: !Ref PublicSubnet2
     Export:
-      Name: !Sub "${Project}-${Environment}-PublicSubnet2Id"
+      Name: !Sub "${project}-${environment}-public-subnet2-id"
 
-  PrivateSubnet1Id:
+  privateSubnet1Id:
     Value: !Ref PrivateSubnet1
     Export:
-      Name: !Sub "${Project}-${Environment}-PrivateSubnet1Id"
+      Name: !Sub "${project}-${environment}-private-subnet1-id"
 
-  PrivateSubnet2Id:
+  privateSubnet2Id:
     Value: !Ref PrivateSubnet2
     Export:
-      Name: !Sub "${Project}-${Environment}-PrivateSubnet2Id"
+      Name: !Sub "${project}-${environment}-private-subnet2-id"
