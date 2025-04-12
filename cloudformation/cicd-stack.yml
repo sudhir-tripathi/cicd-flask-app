@@ -244,7 +244,7 @@ Resources:
               InputArtifacts:
                 - Name: BuildOutput
               Configuration:
-              - ClusterName: !ImportValue
+                ClusterName: !ImportValue
                   Fn::Sub: "${project}-${environment}-ecs-cluster-name"
                 ServiceName: !ImportValue
                   Fn::Sub: "${project}-${environment}-ecs-service-name"
