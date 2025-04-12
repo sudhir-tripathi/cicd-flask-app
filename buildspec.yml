@@ -4,7 +4,7 @@ env:
   variables:
     IMAGE_TAG: "latest"
   parameter-store:
-    REPOSITORY_URI: "/mane/ecr/repository-uri"
+    REPOSITORY_URI: "/mane/dev/ecr/repository-uri"
 
 phases:
   pre_build:
@@ -28,12 +28,14 @@ phases:
       - docker push $REPOSITORY_URI:$IMAGE_TAG
       - docker push $REPOSITORY_URI:latest
       - echo "Docker image pushed successfully!"
-      - printf '[{"name":"flask-container","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+      - echo "Generating imagedefinitions.json for ECS..."
+      - printf '[{"name":"mane-dev-container","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
 
 artifacts:
   files:
     - imagedefinitions.json
 
+# Optional logging to CloudWatch
 # logs:
 #   cloudwatch:
 #     enabled: true
