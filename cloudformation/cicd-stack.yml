@@ -125,7 +125,7 @@ Resources:
             Value: !Ref AWS::Region
           - Name: ECR_REPOSITORY_NAME
             Value: !ImportValue
-              Fn::Sub: "${project}-${environment}-ecrrepositoryname"
+              Fn::Sub: "${project}-${environment}-ecr-repo-name"
           - Name: CONTAINER_NAME
             Value: flask-container
       Artifacts:
@@ -177,9 +177,9 @@ Resources:
                 Resource: !Sub
                   - "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:service/${ClusterName}/${ServiceName}"
                   - ClusterName: !ImportValue
-                      Fn::Sub: "${project}-${environment}-clustername"
+                      Fn::Sub: "${project}-${environment}-ecs-cluster-name"
                     ServiceName: !ImportValue
-                      Fn::Sub: "${project}-${environment}-ecsservicename"
+                      Fn::Sub: "${project}-${environment}-ecs-service-name"
               - Effect: Allow
                 Action:
                   - iam:PassRole
@@ -244,10 +244,10 @@ Resources:
               InputArtifacts:
                 - Name: BuildOutput
               Configuration:
-                ClusterName: !ImportValue
-                  Fn::Sub: "${project}-${environment}-clustername"
+              - ClusterName: !ImportValue
+                  Fn::Sub: "${project}-${environment}-ecs-cluster-name"
                 ServiceName: !ImportValue
-                  Fn::Sub: "${project}-${environment}-ecsservicename"
+                  Fn::Sub: "${project}-${environment}-ecs-service-name"
                 FileName: imagedefinitions.json
               RunOrder: 1
       Tags:
