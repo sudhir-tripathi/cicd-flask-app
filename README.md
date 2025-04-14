@@ -7,7 +7,6 @@ This document outlines the continuous integration and deployment (CI/CD) pipelin
 
 ## 🔁 Architecture Diagram
 
-![CI/CD Flow Diagram](A_flowchart_diagram_visually_represents_the_CI/CD_.png)
 
 ---
 
