@@ -4,6 +4,7 @@ env:
   variables:
     IMAGE_TAG: "latest"
   parameter-store:
+    # Ensure this SSM parameter exists and the CodeBuild role has permission to read it
     REPOSITORY_URI: "/mane/dev/ecr/repository-uri"
 
 phases:
@@ -11,7 +12,10 @@ phases:
     commands:
       - echo "Logging in to Amazon ECR..."
       - aws --version
+      # Check if REPOSITORY_URI is fetched correctly. Add 'set -e' at the start if you want the build to fail on error immediately.
+      - echo "Attempting to log into ECR repository: $REPOSITORY_URI"
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
+      # Use CODEBUILD_RESOLVED_SOURCE_VERSION which is guaranteed to be available
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=$COMMIT_HASH
       - echo "Using image tag: $IMAGE_TAG"
@@ -29,15 +33,19 @@ phases:
       - docker push "$REPOSITORY_URI:latest"
       - echo "Docker image pushed successfully!"
       - echo "Generating imagedefinitions.json for ECS..."
+      # Ensure CONTAINER_NAME matches the container name in your ECS Task Definition (ecs-stack.yml)
+      # It looks like it should be "mane-dev-container" based on ecs-stack.yml
       - printf '[{"name":"mane-dev-container","imageUri":"%s"}]' "$REPOSITORY_URI:$IMAGE_TAG" > imagedefinitions.json
+      - echo "imagedefinitions.json content:"
+      - cat imagedefinitions.json
 
 artifacts:
   files:
     - imagedefinitions.json
 
-# Optional logging to CloudWatch
+# Optional logging to CloudWatch (Uncomment if needed and ensure permissions)
 # logs:
 #   cloudwatch:
 #     enabled: true
-#     group_name: /aws/codebuild/mane-flask-app
-#     stream_name: build-log
+#     group_name: /aws/codebuild/mane-flask-app # Ensure this matches your CodeBuild project name pattern if customized
+#     stream_name: build-log-${CODEBUILD_BUILD_ID}
